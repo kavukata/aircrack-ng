@@ -1,7 +1,7 @@
 /*
  *  Common functions for all aircrack-ng tools
  *
- *  Copyright (C) 2006-2015 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,11 +45,62 @@
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #endif
-#if defined(_WIN32) || defined(_WIN64)
+#if (defined(_WIN32) || defined(_WIN64)) || defined(__CYGWIN32__)
+#include <io.h>
 #include <windows.h>
+#include <errno.h>
 #endif
 #define isHex(c) (hexToInt(c) != -1)
 #define HEX_BASE 16
+
+/*
+ * The following function comes from jumbo.c from JTR.
+ * It has the following license:
+ *
+ * This file is Copyright (c) 2013-2014 magnum, Lukasz and JimF,
+ * and is hereby released to the general public under the
+following terms:
+ * Redistribution and use in source and binary forms, with or
+without
+ * modifications, are permitted.
+*/
+#if defined (__CYGWIN32__) && !defined(__CYGWIN64__)
+int fseeko64(FILE* fp, int64_t offset, int whence) {
+	fpos_t pos;
+
+	if (whence == SEEK_CUR) {
+		if (fgetpos (fp, &pos))
+			return (-1);
+
+		pos += (fpos_t) offset;
+	} else if (whence == SEEK_END) {
+		/* If writing, we need to flush before getting file length. */
+		long long size;
+
+		fflush (fp);
+		size = 0;
+
+		GetFileSizeEx((HANDLE)_get_osfhandle(fileno(fp)), (PLARGE_INTEGER)&size);
+		pos = (fpos_t) (size + offset);
+	} else if (whence == SEEK_SET)
+		pos = (fpos_t) offset;
+	else {
+		errno = EINVAL;
+		return (-1);
+	}
+
+	return fsetpos (fp, &pos);
+}
+
+int64_t ftello64(FILE * fp) {
+	fpos_t pos;
+
+	if (fgetpos(fp, &pos))
+		return  -1LL;
+
+	return (int64_t)pos;
+}
+#endif
 
 /*
  * Print the time and percentage in readable format
@@ -377,7 +428,7 @@ int hexStringToArray(char* in, int in_length, unsigned char* out, int out_length
 
     if (in_length < 2 || out_length < (in_length / 3) + 1 || input == NULL || output == NULL)
     	return -1;
-    
+
     out_pos = 0;
     for (i = 0; i < in_length - 1; ++i)
     {

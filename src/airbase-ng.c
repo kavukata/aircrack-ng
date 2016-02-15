@@ -2,7 +2,7 @@
  *  802.11 monitor AP
  *  based on airtun-ng
  *
- *  Copyright (C) 2008-2015 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2008-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2008, 2009 Martin Beck <hirte@aircrack-ng.org>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -57,7 +57,7 @@
 #include <time.h>
 #include <getopt.h>
 #include <sys/file.h>
-#include <fcntl.h> 
+#include <fcntl.h>
 
 #include <ctype.h>
 
@@ -435,7 +435,7 @@ int addESSID(char* essid, int len, int expiration)
 
     if(len <= 0 || len > 255)
         return -1;
-    
+
     pthread_mutex_lock(&rESSIDmutex);
     cur = rESSID;
 
@@ -1132,23 +1132,35 @@ int getNextESSID(char *essid)
     pESSID_t cur;
 
     pthread_mutex_lock(&rESSIDmutex);
-    cur = rESSID;
 
     if(rESSID == NULL || rESSID->next == NULL) {
         pthread_mutex_unlock(&rESSIDmutex);
         return 0;
     }
-    len = strlen(essid);
-    while (cur->len != len || cur->essid == NULL || strcmp(essid, cur->essid)) {
-        cur = cur->next;
-        if (cur->next == NULL) {
-            pthread_mutex_unlock(&rESSIDmutex);
-            return 0;
-        }
-    }
 
-    memcpy(essid, cur->next->essid, cur->next->len + 1);
-    len = cur->next->len;
+    len = strlen(essid);
+    for (cur = rESSID->next; cur != NULL; cur = cur->next)
+    {
+    	if (*essid == 0) {
+    		break;
+    	}
+    	// Check if current SSID.
+    	if (cur->len == len && cur->essid != NULL && strcmp(essid, cur->essid) == 0) {
+        	// SSID found, get next one
+        	cur = cur->next;
+        	if (cur == NULL) {
+        		cur = rESSID->next;
+        	}
+        	break;
+    	}
+    }
+    len = 0;
+
+    if (cur != NULL) {
+        memcpy(essid, cur->essid, cur->len + 1);
+        len = cur->len;
+
+    }
     pthread_mutex_unlock(&rESSIDmutex);
 
     return len;
@@ -3647,7 +3659,8 @@ void beacon_thread( void *arg )
 
             /* flush expired ESSID entries */
             flushESSID();
-            if (!getNextESSID(essid)) {
+            essid_len = getNextESSID(essid);
+            if (!essid_len) {
                 strcpy(essid, "default");
                 essid_len = strlen("default");
             }

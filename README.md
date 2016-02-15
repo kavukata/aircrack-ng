@@ -17,18 +17,24 @@ to speed up the cracking process.
 
 ## Requirements
 
- * OpenSSL development package or libgcrypt development package
- * If you want SSID filtering with regular expression  in airodump-ng,
-   pcre development package is required (pcre on FreeBSD).
- * If you want to use airolib-ng and '-r' option in aircrack-ng,
-   SQLite development package >= 3.3.17 (3.6.X version or better is recommended):
-   -  libsqlite3-dev on a Debian based distro (sqlite3 on FreeBSD)
- * On windows, cygwin has to be used and it also requires w32api.
- * If you want to use Airpcap, the 'developer' directory from the CD is required.
+ * OpenSSL development package or libgcrypt development package.
+ * Airmon-ng (Linux) requires ethtool.
+ * On windows, cygwin has to be used and it also requires w32api package.
  * Linux: LibNetlink 1 or 3. It can be disabled by setting the flag 'libnl' to false.
-          See Makefile flags below.
  * pkg-config (pkgconf on FreeBSD)
- * FreeBSD: gmake
+ * FreeBSD, OpenBSD, NetBSD, Solaris and OS X with macports: gmake
+ * Linux/Cygwin: make
+
+## Optional stuff
+
+ * If you want SSID filtering with regular expression in airodump-ng
+   (-essid-regex) pcre development package is required.
+ * If you want to use airolib-ng and '-r' option in aircrack-ng,
+   SQLite development package >= 3.3.17 (3.6.X version or better is recommended)
+ * If you want to use Airpcap, the 'developer' directory from the CD is required.
+ * For best performance on FreeBSD (50-70% more), install gcc5 via: pkg install gcc5
+          Then compile with: gmake CC=gcc5 CXX=g++5
+ * rfkill
 
 ## Compiling
 
@@ -36,9 +42,9 @@ to speed up the cracking process.
 
     `make`
 
- * Compilation on FreeBSD:
+ * Compilation on *BSD or Solaris:
  
-    `gmake CC=cc`
+    `gmake`
 
  * Strip debugging symbols:
 
@@ -58,9 +64,10 @@ to speed up the cracking process.
 When compile and installing, the following flags can be used and combined
 to compile and install the suite:
 
-* **sqlite**:   needed to compile `airolib-ng` and add support for `airolib-ng`
-                databases in aircrack-ng.
-                On cygwin: SQLite has to be compiled manually. See next section.
+* **sqlite**:   Compile airolib-ng and add support for airolib-ng databases
+                in aircrack-ng:
+    - Debian based distro: libsqlite3-dev
+    - FreeBSD: sqlite3
 
 * **airpcap**:  needed for supporting airpcap devices on windows (cygwin only)
                 REQUIREMENT: Copy 'developers' directory from Airpcap CD one 
@@ -68,7 +75,8 @@ to compile and install the suite:
                 Note: Not working yet.
 
 * **experimental**: needed to compile `tkiptun-ng`, `easside-ng` (and `buddy-ng`) and
-                    `wesside-ng`
+                    `wesside-ng`. Building besside-ng-crawler requires LibPCAP 
+                    (development package). On debian based distro, install libpcap-dev
 
 * **ext_scripts**: needed to build `airoscript-ng`, `versuck-ng`, `airgraph-ng` and 
                    `airdrop-ng`. 
@@ -77,6 +85,7 @@ to compile and install the suite:
 
 * **gcrypt**:   Use libgcrypt crypto library instead of the default OpenSSL.
                 And also use internal fast sha1 implementation (borrowed from GIT)
+                Dependency (Debian): libgcrypt20-dev
 
 * **libnl**:    Add support for netlink (nl80211). Linux only.
     - Requires `libnl1` OR `libnl3`.
@@ -86,9 +95,15 @@ to compile and install the suite:
 
 * **pcre**:	Add support for regular expression matching for ESSID in airodump-ng and besside-ng.
             	Dependencies (debian): libpcre3-dev
+    - Debian based distro: libpcre3-dev
+    - FreeBSD: pcre
 
 * **duma**:	Compile with DUMA support. DUMA is a library to detect buffer overruns and under-runs.
             	Dependencies (debian): duma
+
+* **xcode**:    Set this flag to true to compile on OS X with Xcode 7+.
+
+* **macport**:  Set this flag to true to compile on OS X with macports.
 
 #### Examples:
 
@@ -106,6 +121,18 @@ to compile and install the suite:
   * Installing, with external scripts:
 
     `make sqlite=true experimental=true ext_scripts=true`
+
+  * Testing (with sqlite, experimental and pcre)
+
+    `make sqlite=true experimental=true pcre=true check`
+
+  * Compiling on OS X with macports (and all options):
+
+    `gmake macport=true sqlite=true experimental=true pcre=true`
+
+  * Compiling on FreeBSD with better performance
+
+    `gmake CC=gcc5 CXX=g++5`
 
 # Using precompiled binaries
 

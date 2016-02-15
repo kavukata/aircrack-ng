@@ -15,19 +15,8 @@
  */
 #include "radiotap_iter.h"
 #include "platform.h"
-#if defined(ANDROID) || defined(__ANDROID__)
+#if defined(ANDROID) || defined(__ANDROID__) || (defined(__sun) && defined(__SVR4))
 	#include "../byteorder.h"
-#endif
-
-#ifdef _BSD_SOURCE
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#if !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__DragonFly__) && !defined(__NetBSD__)
-#define le16toh(x) (x)
-#define le32toh(x) (x)
-#endif
-#else
-#define le32toh(x) bswap_32 (x)
-#endif
 #endif
 
 

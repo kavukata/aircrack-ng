@@ -38,15 +38,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+#include <sys/time.h>
 #if defined(__FreeBSD__)
 #include <unistd.h>
 #endif
 #include "aircrack-ptw-lib.h"
 #include "eapol.h"
 
-#ifdef __OpenBSD__
-	#include <pthread.h>
-#endif
+#include <pthread.h>
 
 #define SUCCESS  0
 #define FAILURE  1
@@ -88,17 +87,32 @@ struct hashdb_rec {
 	uint8_t pmk[32];
 } __attribute__ ((packed));
 
-#ifdef __CYGWIN__
-	#include <sys/time.h>
-#endif
-float chrono(struct timeval *start, int reset);
+struct _cpuinfo {
+	int simdsize;				/* SIMD size		*/
+	char *flags;				/* Feature Flags	*/
+	char *model;				/* CPU Model		*/
+	int cores;				/* Real CPU cores       */
+	int coreperid;				/* Max cores per id     */
+	int htt;				/* Hyper-Threading      */
+	int maxlogic;				/* Max addressible lCPU */
+	int hv;					/* Hypervisor detected  */
+	int cpufreq_cur;			/* CPUfreq Current	*/
+	int cpufreq_max;			/* CPUfreq Maximum	*/
+	float coretemp;				/* CPU Temperature	*/
+	char *cputemppath;			/* Linux CPU Sensor Path*/
+};
+
+extern float chrono(struct timeval *start, int reset);
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern int readLine(char line[], int maxlength);
 extern int hexToInt(char s[], int len);
 extern int hexCharToInt(unsigned char c);
-
+extern int cpuid_simdsize();
+extern int cpuid_getinfo();
+extern struct _cpuinfo cpuinfo;
+extern int get_nb_cpus();
 
 #define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
@@ -270,6 +284,7 @@ struct mergeBSSID
 struct WPA_data {
 	struct AP_info* ap;				/* AP information */
 	int	thread;						/* number of this thread */
+	int	threadid;						/* id of this thread */
 	int nkeys;						/* buffer capacity */
 	char *key_buffer;				/* queue as a circular buffer for feeding and consuming keys */
 	int front;						/* front marker for the circular buffers */
@@ -281,9 +296,5 @@ struct WPA_data {
 
 
 void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod );
-
-#if defined(__clang__) || defined(__llvm__)
-extern inline int wpa_send_passphrase(char *key, struct WPA_data* data, int lock);
-#endif
 
 #endif /* _AIRCRACK_NG_H */
